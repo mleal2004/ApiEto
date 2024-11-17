@@ -1,57 +1,53 @@
 const express = require('express');
+const db = require('../db');  // Importar la conexión a la base de datos
+
 const router = express.Router();
-const db = require('../db');
 
-// Crear tarea
+// Ruta para crear un nuevo Tag
 router.post('/create', (req, res) => {
-    const { usuario_id, actividad_id, tag_id, descripcion, fecha } = req.body;
-    const query = 'INSERT INTO Tarea (usuario_id, actividad_id, tag_id, descripcion, fecha) VALUES (?, ?, ?, ?, ?)';
-    db.query(query, [usuario_id, actividad_id, tag_id, descripcion, fecha], (err, result) => {
+    const { nombre } = req.body;  // Recibimos el nombre del tag desde el cuerpo de la solicitud
+
+    // Validar que el nombre no esté vacío
+    if (!nombre) {
+        return res.status(400).json({ error: 'El nombre del tag es obligatorio' });
+    }
+
+    // Insertar el nuevo tag en la base de datos
+    const query = 'INSERT INTO Tag (nombre) VALUES (?)';
+    db.query(query, [nombre], (err, results) => {
         if (err) {
-            res.status(500).json({ error: 'Error al crear la tarea', details: err });
-        } else {
-            res.json({ success: true, id: result.insertId });
+            console.error('Error al crear el tag:', err);
+            return res.status(500).json({
+                error: 'Error al crear el tag',
+                details: err
+            });
         }
+
+        // Si la inserción fue exitosa, respondemos con el ID del nuevo tag
+        res.status(201).json({
+            success: true,
+            id: results.insertId,
+            nombre: nombre
+        });
     });
 });
 
-// Listar tareas por usuario
-router.get('/user/:id', (req, res) => {
-    const { id } = req.params;
-    const query = 'SELECT * FROM Tarea WHERE usuario_id = ?';
-    db.query(query, [id], (err, results) => {
-        if (err) {
-            res.status(500).json({ error: 'Error al listar las tareas', details: err });
-        } else {
-            res.json({ success: true, tasks: results });
-        }
-    });
-});
+router.get('/tareas', (req, res) => {
+    const query = 'SELECT * FROM Tareas';
 
-// Editar tarea
-router.put('/:id', (req, res) => {
-    const { id } = req.params;
-    const { actividad_id, tag_id, descripcion, fecha } = req.body;
-    const query = 'UPDATE Tarea SET actividad_id = ?, tag_id = ?, descripcion = ?, fecha = ? WHERE id = ?';
-    db.query(query, [actividad_id, tag_id, descripcion, fecha, id], (err) => {
+    db.query(query, (err, results) => {
         if (err) {
-            res.status(500).json({ error: 'Error al editar la tarea', details: err });
-        } else {
-            res.json({ success: true });
+            console.error('Error al obtener las tareas:', err);
+            return res.status(500).json({
+                error: 'Error al obtener las tareas',
+                details: err
+            });
         }
-    });
-});
 
-// Eliminar tarea
-router.delete('/:id', (req, res) => {
-    const { id } = req.params;
-    const query = 'DELETE FROM Tarea WHERE id = ?';
-    db.query(query, [id], (err) => {
-        if (err) {
-            res.status(500).json({ error: 'Error al eliminar la tarea', details: err });
-        } else {
-            res.json({ success: true });
-        }
+        res.status(200).json({
+            success: true,
+            tareas: results
+        });
     });
 });
 
