@@ -5,6 +5,7 @@ const router = express.Router();
 
 // Obtener todos los tags
 router.get('/tags', (req, res) => {
+    console.log("Se realiza consulta de tags");
     const query = 'SELECT * FROM Tag';
     db.query(query, (err, results) => {
         if (err) {

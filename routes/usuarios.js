@@ -21,17 +21,18 @@ router.post('/usuarios', async (req, res) => {
                 if (err.code === 'ER_DUP_ENTRY') {
                     return res.status(400).json({ error: 'El nombre de usuario ya está en uso' });
                 }
-                return res.status(500).json({ error: 'Error al crear el usuario', details: err });
+                return res.status(500).json({ error: 'Error al crear el usuario', details: err.message });
             }
             res.status(201).json({ success: true, id: result.insertId });
         });
     } catch (err) {
-        res.status(500).json({ error: 'Error al procesar la contraseña', details: err });
+        res.status(500).json({ error: 'Error al procesar la contraseña', details: err.message });
     }
 });
 
 // Listar todos los usuarios
 router.get('/usuarios', (req, res) => {
+    console.log("Se realiza consulta de usuarios");
     const query = 'SELECT id, nombre, apellido, username, rol_id, createdAt FROM Usuario';
     db.query(query, (err, results) => {
         if (err) {
@@ -82,7 +83,7 @@ router.put('/usuarios/:id', async (req, res) => {
 
         db.query(query, params, (err, result) => {
             if (err) {
-                return res.status(500).json({ error: 'Error al actualizar el usuario', details: err });
+                return res.status(500).json({ error: 'Error al actualizar el usuario', details: err.message });
             }
             res.status(200).json({ success: true });
         });
@@ -102,5 +103,52 @@ router.delete('/usuarios/:id', (req, res) => {
         res.status(200).json({ success: true });
     });
 });
+
+// Login de usuario
+router.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    // Validar los datos de entrada
+    if (!username || !password) {
+        return res.status(400).json({ error: 'El nombre de usuario y la contraseña son obligatorios' });
+    }
+
+    const query = 'SELECT id, username, password, rol_id FROM Usuario WHERE username = ?';
+    db.query(query, [username], async (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error al buscar el usuario', details: err });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const user = results[0];
+
+        try {
+            // Comparar la contraseña proporcionada con la almacenada en la base de datos
+            const isMatch = await bcrypt.compare(password, user.password);
+
+            if (!isMatch) {
+                return res.status(401).json({ error: 'Contraseña incorrecta' });
+            }
+
+            // Si las credenciales son válidas, puedes generar un token o devolver los datos del usuario
+            res.status(200).json({
+                success: true,
+                message: 'Login exitoso',
+                id: user.id,
+                username: user.username,
+                rol_id: user.rol_id
+                
+                
+            });
+        } catch (err) {
+            console.error("Error en bcrypt.compare:", err);
+            res.status(500).json({ error: 'Error al procesar la autenticación', details: err.message });
+        }
+    });
+});
+
 
 module.exports = router;

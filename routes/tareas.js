@@ -22,6 +22,7 @@ router.post('/tareas', (req, res) => {
 
 // Listar todas las tareas
 router.get('/tareas', (req, res) => {
+    console.log("Se realiza consulta de tareas");
     const query = 'SELECT * FROM Tarea';
     db.query(query, (err, results) => {
         if (err) {
