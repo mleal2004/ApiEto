@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const usuariosRoutes = require('./routes/usuarios');
 const tareasRoutes = require('./routes/tareas');
 const tagsRoutes = require('./routes/tags');
+const actividadesRoutes = require('./routes/actividad');  // Importar el router de actividades
 const db = require('./db');  // Importa el pool de conexiones
 
 // Cargar variables de entorno
@@ -18,6 +19,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Rutas
+app.use('/actividad', actividadesRoutes);  // Usa el router de actividades
 app.use('/usuarios', usuariosRoutes);
 app.use('/tareas', tareasRoutes);
 app.use('/tags', tagsRoutes);
